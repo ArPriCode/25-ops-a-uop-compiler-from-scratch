@@ -11,7 +11,7 @@ python scaffold.py
 ## Steps
 
 - [x] **1.** UOp
-- [ ] **2.** infer
+- [x] **2.** infer
 - [ ] **3.** parse_uir
 - [ ] **4.** print_uir
 - [ ] **5.** bounds
