@@ -593,8 +593,108 @@ def parse_uir(text):
         raise SyntaxError("empty program")
     return last_val
 
-# Step 4 - print_uir (not yet solved)
-# TODO: implement
+# Step 4 - print_uir
+import sys
+import os
+import re
+import math
+import itertools
+import shutil
+import subprocess
+import tempfile
+import hashlib
+import ctypes
+import pathlib
+import urllib.request
+from math import prod
+from collections import namedtuple
+import numpy as np
+
+
+def _lit_text(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, float):
+        return repr(v)
+    return str(v)
+
+
+def _list_text(xs):
+    return "[" + " ".join(str(x) for x in xs) + "]"
+
+
+def print_uir(root):
+    def get_op(u):
+        return u.op.name.upper() if hasattr(u.op, "name") else str(u.op).upper()
+
+    def fmt_dtype(dt):
+        return dt.name if hasattr(dt, "name") else str(dt)
+
+    if get_op(root) == "CONST":
+        return f"%0 = const {_lit_text(root.arg)}\n"
+
+    names = {}
+    lines = []
+
+    def src_str(u):
+        if get_op(u) == "CONST":
+            return _lit_text(u.arg)
+        return names[u]
+
+    for u in root.toposort():
+        op_upper = get_op(u)
+        if op_upper == "CONST":
+            continue
+
+        name = f"%{len(names)}"
+        names[u] = name
+        op_name = op_upper.lower()
+
+        if op_upper == "PARAM":
+            slot, dt, min_val, max_val = u.arg
+            line = f"{name} = param [] : dtype={fmt_dtype(dt)} slot={slot}"
+            if min_val is not None:
+                line += f" min={min_val}"
+            if max_val is not None:
+                line += f" max={max_val}"
+
+        elif op_upper == "CAST":
+            dt = u.arg if u.arg is not None else u.dtype
+            line = f"{name} = cast {src_str(u.src[0])} : dtype={fmt_dtype(dt)}"
+
+        elif op_upper in ("SHRINK", "PAD", "EXPAND", "RESHAPE", "PERMUTE"):
+            srcs = " ".join(src_str(s) for s in u.src)
+            arg_list = u.arg if isinstance(u.arg, (list, tuple)) else [u.arg]
+            arg_str = _list_text(arg_list)
+            line = f"{name} = {op_name} {srcs} {arg_str}" if srcs else f"{name} = {op_name} {arg_str}"
+
+        elif op_upper in ("BUFFER", "ALLOC"):
+            slot, dt, shape = u.arg[0], u.arg[1], u.arg[2]
+            url = u.arg[3] if len(u.arg) > 3 else None
+            sha256 = u.arg[4] if len(u.arg) > 4 else None
+            shape_list = shape if isinstance(shape, (list, tuple)) else [shape]
+
+            line = f"{name} = {op_name} {_list_text(shape_list)} : dtype={fmt_dtype(dt)} slot={slot}"
+            if url is not None:
+                line += f" url={url}"
+            if sha256 is not None:
+                line += f" sha256={sha256}"
+
+        elif op_upper == "RANGE":
+            line = f"{name} = range {src_str(u.src[0])} : slot={u.arg}"
+
+        elif op_upper == "REDUCE":
+            reduce_op, pop_k = u.arg
+            op_str = reduce_op.name.lower() if hasattr(reduce_op, "name") else str(reduce_op).lower()
+            line = f"{name} = reduce {src_str(u.src[0])} : op={op_str} pop={pop_k}"
+
+        else:
+            srcs = " ".join(src_str(s) for s in u.src)
+            line = f"{name} = {op_name}" + (f" {srcs}" if srcs else "")
+
+        lines.append(line)
+
+    return "\n".join(lines) + "\n"
 
 # Step 5 - bounds (not yet solved)
 # TODO: implement

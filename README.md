@@ -13,7 +13,7 @@ python scaffold.py
 - [x] **1.** UOp
 - [x] **2.** infer
 - [x] **3.** parse_uir
-- [ ] **4.** print_uir
+- [x] **4.** print_uir
 - [ ] **5.** bounds
 - [ ] **6.** eval_uop
 - [ ] **7.** graph_rewrite
