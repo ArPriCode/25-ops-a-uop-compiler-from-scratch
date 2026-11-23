@@ -14,7 +14,7 @@ python scaffold.py
 - [x] **2.** infer
 - [x] **3.** parse_uir
 - [x] **4.** print_uir
-- [ ] **5.** bounds
+- [x] **5.** bounds
 - [ ] **6.** eval_uop
 - [ ] **7.** graph_rewrite
 - [ ] **8.** fold_constants
